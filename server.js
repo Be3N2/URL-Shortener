@@ -8,44 +8,37 @@ var app = express();
 var mongodb = require('mongodb');
 var MONGODB_URI = process.env.DBURL;
 
+var collection;
+var startup = true;
+
 app.use(express.static('public'));
 
 app.get("/", function (request, response) {
+  if (startup) connect();
   response.sendFile(__dirname + '/views/index.html');
 });
 
-app.get("/con", function(request,response) {
-  connect();
-  response.send("connected"); 
-});
-
 app.get("/:numtag", function(request, response) {
+  if (startup) connect();
   let num = request.params.numtag;
   if (!isNaN(num)) {
-    num = parseInt(num);
-    mongodb.MongoClient.connect(MONGODB_URI, function (err, db) {
-      if (err) {
-        response.send("error in num connect");
-      }         
+    
+    num = parseInt(num);     
       
-      db.collection("urlShortener").find({"short": num}).toArray(function(err, docs) {
-        if (err) {
-          db.close();
-          response.send("Error in toArray()");
-        } 
-        if (docs != undefined) {
-          let address = docs[0].url;
-          console.log(docs);
-          console.log(address);
-          db.close();
-          response.redirect(address);
-        } else {
-          db.close();
-          response.send("Failed to find value");
-        }
-      });
+    collection.find({"short": num}).toArray(function(err, docs) {
+      if (err) response.send("Error in toArray()");
       
-    });    
+      
+      if (docs.length != 0) {
+        let address = docs[0].url;
+        //console.log(docs);
+        response.redirect(address);
+      } else {
+        response.send("Failed to find value");
+      }
+    });
+      
+        
   } else {
     response.send("Want a number not: " + num);
   }
@@ -54,6 +47,7 @@ app.get("/:numtag", function(request, response) {
 app.get("/shorten/*", addUrl);
 
 function addUrl(request, response) {
+  if (startup) connect();
   
   //more on request.params and reg expression routes like *: https://expressjs.com/en/4x/api.html#req.params
   let inputUrl = request.params[0];
@@ -62,20 +56,18 @@ function addUrl(request, response) {
   
   //if valid url
   if (testUrl(inputUrl)) {
-    mongodb.MongoClient.connect(MONGODB_URI, function (err, db) {
-      if (err) {
-        db.close();
-        
-        response.send("error: ");
-      }         
       
-      let newUrl = request.protocol + '://' + request.get('host') + '/' + 52;
-      //db.collection("testData").update(inputUrl, 52, {upsert:true});
-      addObject = {originalUrl: inputUrl, newUrl: newUrl};
-      db.close();
-      response.send(addObject);
-      
-    });    
+    let newUrl = request.protocol + '://' + request.get('host') + '/' + 52;
+    //collection.update({"inputUrl"}, 52, {upsert:true});
+    collection.find().forEach(function(err, doc) {
+      if (err) throw err;
+      console.log(doc);
+    });
+
+    addObject = {originalUrl: inputUrl, newUrl: newUrl};
+
+    response.send(addObject);
+       
   } else {
     response.send("bad url: " + inputUrl);
   }
@@ -109,20 +101,17 @@ function connect() {
       return;
     }
     
-    var resultArr = [];
     console.log('Connection established to learningmongo database');
     
     // do some work here with the database.
-    let collection = db.collection(process.env.COLLECTION).find();
-    collection.forEach(function(doc, err) {
+    collection = db.collection(process.env.COLLECTION);
+    collection.find().forEach(function(doc, err) {
       if (err) throw err;
-      resultArr.push(doc);
       console.log(doc);
     }, function() {
       //callback
-      console.log(resultArr);
       console.log("running close");
-      db.close();
+      startup = false;
     });
     
     //database stats if needed
@@ -130,7 +119,7 @@ function connect() {
     
     //promiseObj.then(function(val) {
     //  console.log(val);
-   // }); 
+    //}); 
 
   });
                               
