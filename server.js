@@ -19,6 +19,38 @@ app.get("/con", function(request,response) {
   response.send("connected"); 
 });
 
+app.get("/:numtag", function(request, response) {
+  let num = request.params.numtag;
+  if (!isNaN(num)) {
+    num = parseInt(num);
+    mongodb.MongoClient.connect(MONGODB_URI, function (err, db) {
+      if (err) {
+        response.send("error in num connect");
+      }         
+      
+      db.collection("urlShortener").find({"short": num}).toArray(function(err, docs) {
+        if (err) {
+          db.close();
+          response.send("Error in toArray()");
+        } 
+        if (docs != undefined) {
+          let address = docs[0].url;
+          console.log(docs);
+          console.log(address);
+          db.close();
+          response.redirect(address);
+        } else {
+          db.close();
+          response.send("Failed to find value");
+        }
+      });
+      
+    });    
+  } else {
+    response.send("Want a number not: " + num);
+  }
+});
+
 app.get("/shorten/*", addUrl);
 
 function addUrl(request, response) {
@@ -100,6 +132,6 @@ function connect() {
     //  console.log(val);
    // }); 
 
-});
+  });
                               
 }
