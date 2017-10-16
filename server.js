@@ -21,17 +21,17 @@ app.get("/", function (request, response) {
 app.get("/:numtag", function(request, response) {
   if (startup) connect();
   let num = request.params.numtag;
-  if (!isNaN(num)) {
+  if (testHex(num)) {   
     
-    num = parseInt(num);     
-      
     collection.find({"short": num}).toArray(function(err, docs) {
-      if (err) response.send("Error in toArray()");
+      if (err) throw err;
       
-      
-      if (docs.length != 0) {
+      //wont throw err if it doesn't find it, need to check the array
+      if (docs.length != 0) { 
         let address = docs[0].url;
-        //console.log(docs);
+        if (!/^(f|ht)tps?:\/\//i.test(address)) {
+          address = "http://" + address;
+        }
         response.redirect(address);
       } else {
         response.send("Failed to find value");
@@ -52,25 +52,45 @@ function addUrl(request, response) {
   //more on request.params and reg expression routes like *: https://expressjs.com/en/4x/api.html#req.params
   let inputUrl = request.params[0];
   
-  let addObject = {};
+  let displayObj = {originalUrl: inputUrl, newUrl: null};
   
   //if valid url
   if (testUrl(inputUrl)) {
       
-    let newUrl = request.protocol + '://' + request.get('host') + '/' + 52;
-    //collection.update({"inputUrl"}, 52, {upsert:true});
-    collection.find().forEach(function(err, doc) {
+    collection.find({"url": inputUrl}).toArray(function(err, docs) {
       if (err) throw err;
-      console.log(doc);
+
+      if (docs.length != 0) {
+        
+      } else {
+        //doesn't exist need to create it
+        
+        //nice code snippet generates random 3 digit hex value from https://www.paulirish.com/2009/random-hex-color-code-snippets/
+        let randomHex = Math.floor(Math.random()*4095).toString(16);
+        let serverObject = {url: inputUrl, short: randomHex};
+        
+        let newUrl = request.protocol + "://" + request.get('host') + '/' + randomHex;
+        displayObj.newUrl = newUrl;
+        
+        try {
+          collection.insertOne(serverObject);
+          response.send(displayObj);
+        } catch (err) {
+          response.send("error");
+          throw err;
+        }
+      }
+      
     });
-
-    addObject = {originalUrl: inputUrl, newUrl: newUrl};
-
-    response.send(addObject);
        
   } else {
     response.send("bad url: " + inputUrl);
   }
+}
+
+function testHex(incoming) {
+  var regX = /[0-9A-Fa-f]/g; //regular expression for 0-e number range
+  return regX.test(incoming);
 }
 
 function testUrl(inputUrl) {
