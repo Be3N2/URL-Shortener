@@ -19,8 +19,12 @@ app.get("/", function (request, response) {
 });
 
 app.get("/:numtag", function(request, response) {
+  //make sure connection do db is established
   if (startup) connect();
+  
   let num = request.params.numtag;
+  
+  //test if valid num
   if (testHex(num)) {   
     
     collection.find({"short": num}).toArray(function(err, docs) {
@@ -29,9 +33,12 @@ app.get("/:numtag", function(request, response) {
       //wont throw err if it doesn't find it, need to check the array
       if (docs.length != 0) { 
         let address = docs[0].url;
+        
+        //if its vallid but doesn't have http:// the redirect wont work
         if (!/^(f|ht)tps?:\/\//i.test(address)) {
           address = "http://" + address;
         }
+        
         response.redirect(address);
       } else {
         response.send("Failed to find value");
@@ -54,37 +61,43 @@ function addUrl(request, response) {
   
   let displayObj = {originalUrl: inputUrl, newUrl: null};
   
-  //if valid url
+  //if valid url allows no https and www but can be changed to require it in testUrl
   if (testUrl(inputUrl)) {
       
     collection.find({"url": inputUrl}).toArray(function(err, docs) {
       if (err) throw err;
 
       if (docs.length != 0) {
+        //already exists just change to standard display format
+        displayObj.newUrl = request.protocol + "://" + request.get('host') + '/' + docs[0].short;
+        response.send(displayObj);
         
       } else {
         //doesn't exist need to create it
         
-        //nice code snippet generates random 3 digit hex value from https://www.paulirish.com/2009/random-hex-color-code-snippets/
-        let randomHex = Math.floor(Math.random()*4095).toString(16);
+        //generate will check to make sure is unique
+        let randomHex = gererateHex(); 
+        
         let serverObject = {url: inputUrl, short: randomHex};
         
         let newUrl = request.protocol + "://" + request.get('host') + '/' + randomHex;
         displayObj.newUrl = newUrl;
         
         try {
+          //try catch for collection insertion
           collection.insertOne(serverObject);
           response.send(displayObj);
         } catch (err) {
-          response.send("error");
           throw err;
+          response.send("Error adding to Database");
         }
       }
       
     });
        
   } else {
-    response.send("bad url: " + inputUrl);
+    let returnBad = {err: "Url Invalid"};
+    response.send(returnBad);
   }
 }
 
@@ -92,6 +105,30 @@ function testHex(incoming) {
   var regX = /[0-9A-Fa-f]/g; //regular expression for 0-e number range
   return regX.test(incoming);
 }
+
+function gererateHex() {
+  
+  //nice code snippet generates random 3 digit hex value from https://www.paulirish.com/2009/random-hex-color-code-snippets/
+  let newHex = Math.floor(Math.random()*4095).toString(16);
+ 
+  while (uniqueNum(newHex)) {
+    //if key is found make a new one
+    newHex = Math.floor(Math.random()*4095).toString(16);
+  }
+  
+  return newHex;
+}
+  
+function uniqueNum(checkNum) {
+  collection.find({"short": checkNum}).toArray(function(err, docs) {
+    if (err) throw err;
+    
+    // if key is found then docs.length wont be zero and newValue isn't unique
+    return (docs.length != 0);
+    
+  });
+}
+                                             
 
 function testUrl(inputUrl) {
   
@@ -117,20 +154,19 @@ function connect() {
   
   mongodb.MongoClient.connect(MONGODB_URI, function(err, db) {
     if (err) {
-      console.log('Unable to connect to the mongoDB server. Error:', err);
+      //console.log('Unable to connect to the mongoDB server. Error:', err);
       return;
     }
     
-    console.log('Connection established to learningmongo database');
+    //console.log('Connection established to learningmongo database');
     
     // do some work here with the database.
     collection = db.collection(process.env.COLLECTION);
     collection.find().forEach(function(doc, err) {
       if (err) throw err;
-      console.log(doc);
+      //console.log(doc); //this is for outputting server contents
     }, function() {
-      //callback
-      console.log("running close");
+      //callback function
       startup = false;
     });
     

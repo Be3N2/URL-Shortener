@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html>
   <head>
     <title>Url Shortener</title>
-    <meta name="description" content="Microservice node project">
+    <meta name="description" content="A cool thing made with Glitch">
+    <link id="favicon" rel="icon" href="https://glitch.com/edit/favicon-app.ico" type="image/x-icon">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,17 +11,57 @@
   </head>
   <body>
 
-
-    <main>
-      <h1>
-        Use /shorten/puturlhere for inputting a url
-      </h1>
-    </main>
-
-    <footer>
-      Made by Ben Wakefield
-    </footer>
-
+    <h1>
+      Url Shortener Microservice
+    </h1>
+    
+    <div class="main-box"> 
+      <div class="text-box">
+        
+      
+        <h3>
+          How to Use
+        </h3>
+        <hr>
+        <p>
+          Can shorten a url by adding the extension /shorten/yourUrlHere and will get <br>back a json object with the new 
+          shortened url, that will redirect to the inputted url. <br>It creates a 3 digit hexadecimal code for each inputted url.
+        </p>
+        <hr>
+        <h4>
+          A few example calls:
+        </h4>
+        <ul>
+          <li>https://url-shortener-node.glitch.me/shorten/www.google.com</li>
+          <li>https://url-shortener-node.glitch.me/shorten/https://about.freecodecamp.org/</li>
+        </ul>
+  
+        <h4>
+          The response in json format:
+        </h4>
+        <ul>
+          <li>{"originalUrl": "www.google.com", "newUrl": "http://url-shortener-node.glitch.me/c23"}</li>
+          <li>{"originalUrl": "https://about.freecodecamp.org", "newUrl": "http://url-shortener-node.glitch.me/bf4"}</li>
+        </ul>
+        
+        <h4>
+          The newUrl value will be a redirect to inputted site when followed:
+        </h4>
+        <ul>
+          <li><a href="http://url-shortener-node.glitch.me/c23">http://url-shortener-node.glitch.me/c23</a> Will link to Google.</li>
+          <li><a href="http://url-shortener-node.glitch.me/bf4">http://url-shortener-node.glitch.me/bf4</a> Will link to Freecodecamp.</li>
+        </ul>
+        <br>
+        <hr>
+        <p class="footNote">
+          Project made by Ben Wakefield for <a href="https://www.freecodecamp.org/be3n2">Freecodecamp</a>.
+          Source code and more info available on <a href="https://github.com/Be3N2/URL-Shortener">Github</a>.
+        </p>
+        <br>
+      </div>
+      
+    </div>
+    <!-- Your web-app is https, so your scripts need to be too -->
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
             crossorigin="anonymous"></script>

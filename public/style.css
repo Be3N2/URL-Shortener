@@ -2,3 +2,15 @@
 body {
   background-color: lightgrey;
 }
+
+ul {
+   list-style: none;
+}
+
+li {
+  margin-top: 6px;
+}
+
+li a {
+  margin-right: 15px;
+}
